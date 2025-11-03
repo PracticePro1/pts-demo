@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+<title>PlayToShine Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-gradient: linear-gradient(135deg, #ffffff, #f1f1f1);
+  --text: #000000;
+  --accent: #d50000;
+  --btn-bg: #2962ff;
+  --btn-hover: #0039cb;
+  --input-bg: #ffffff;
+  --timer-color: #ff6f00;
+  --feedback-correct: #00c853;
+  --feedback-wrong: #dd2c00;
+  --result-color: #aa00ff;
+  --answer-bg: #e3f2fd;
+  --answer-hover: #bbdefb;
+  --answer-correct: #b9f6ca;
+  --answer-incorrect: #ff8a80;
+}
+
+/* ========== RESET & BASE STYLES ========== */
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  overflow:hidden; touch-action:none;
+  font-family: 'Fredoka', sans-serif;
+  background: var(--bg-gradient); color: var(--text);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  font-size: 16px; /* Balanced base font size */
+}
+body { -webkit-user-select:none; user-select:none; }
+
+/* ========== CONTAINERS ========== */
+.card, #quizSection { width:100%; max-width:900px; padding:clamp(1rem, 2vw, 2rem); display:flex; flex-direction:column; align-items:center; }
+
+/* ========== OPTIMIZED TYPOGRAPHY FOR KIDS & VISUAL IMPAIRMENT ========== */
+h1 { font-size:clamp(2rem,5vw,3rem); color:var(--accent); margin:1rem 0; text-align:center; }
+h2 { font-size:clamp(1.8rem,4vw,2.5rem); text-align:center; color:var(--accent); }
+h3 { font-size: clamp(1.5rem, 4vw, 2.2rem); margin: 1rem 0; text-align: center; color:var(--accent); }
+p { font-size:clamp(1.1rem,3vw,1.5rem); margin:0.8rem 0; text-align:center; line-height:1.5; }
+input { margin-top:1rem; padding:0.8rem; width:80%; max-width:400px; border-radius:1rem; border:2px solid var(--accent); background:var(--input-bg); font-size:clamp(1.1rem,3vw,1.4rem); text-align:center; font-weight:bold; }
+
+/* ========== BUTTON STYLES ========== */
+.btn, .nav-btn, .small-btn, .answer-btn {
+  border:none; border-radius:2rem; cursor:pointer; font-weight:bold;
+  transition: transform 0.2s, background 0.3s;
+}
+.btn { padding:0.8rem 1.5rem; font-size:clamp(1.1rem,3vw,1.4rem); color:#fff; background:var(--btn-bg); width:220px; }
+.btn:hover { background:var(--btn-hover); transform:scale(1.05); }
+.btn:disabled { background:#ccc; cursor:not-allowed; }
+
+/* Topic buttons */
+.nav-btn { 
+  width:90%; max-width:320px; margin:0.6rem 0; padding:clamp(1rem,2.5vw,1.2rem); 
+  font-size:clamp(1.1rem,3vw,1.4rem); text-align:center; color:#fff; border-radius:1.2rem; 
+  position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.nav-btn:hover { transform:scale(1.05); opacity:0.9; }
+
+.small-btn { margin:0.5rem; padding:0.7rem 1.3rem; font-size:clamp(1rem,2.5vw,1.2rem); background:var(--accent); color:#fff; border-radius:1rem; }
+.small-btn:hover { background:var(--btn-hover); transform:scale(1.05); }
+
+.answer-btn { 
+  width: 92%; max-width: 500px;
+  margin: 0.6rem 0; 
+  padding: clamp(1rem, 2.5vw, 1.2rem); 
+  font-size: clamp(1.1rem, 3vw, 1.4rem); 
+  background: var(--answer-bg);
+  color: var(--text);
+  text-align: center;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  display: flex; justify-content:center; align-items: center;
+}
+.answer-btn:hover { background: var(--answer-hover); transform: scale(1.02); }
+.answer-btn:disabled { cursor: not-allowed; }
+.answer-btn.correct { background: var(--answer-correct); }
+.answer-btn.incorrect { background: var(--answer-incorrect); }
+
+/* ========== HEADER & TIMER ========== */
+header { width:100%; background:var(--accent); color:#fff; padding:clamp(0.8rem,2vw,1rem); font-size:clamp(1.4rem,4vw,1.8rem); font-weight:bold; position:relative; text-align:center; display:flex; align-items:center; justify-content:center; }
+#headerTitle { pointer-events:none; }
+
+.timer { font-size:clamp(1.5rem,3.5vw,1.9rem); color:var(--timer-color); font-weight:bold; margin:1rem 0; }
+
+.feedback { font-size:clamp(1.3rem,3vw,1.6rem); margin:1rem 0; min-height:2em; font-weight:bold; }
+.feedback.correct { color:var(--feedback-correct); }
+.feedback.incorrect { color:var(--feedback-wrong); }
+.score { font-size:clamp(1.8rem,4.5vw,2.5rem); color:var(--feedback-correct); animation:bounce 1.2s infinite alternate; font-weight:bold; }
+
+/* ========== QUIZ SECTIONS ========== */
+#quizSection { width:100%; flex-direction:column; align-items:center; }
+.topic-list, .question-container, .result-container { width:100%; display:none; flex-direction:column; align-items:center; }
+.topic-list.visible, .question-container.visible, .result-container.visible { display:flex; }
+.topic-list { max-height:70vh; overflow-y:auto; padding-right:0.5rem; }
+
+.question-container { max-height: 80vh; overflow-y: auto; padding-right: 0.5rem; }
+
+.button-group { display:flex; flex-wrap:wrap; justify-content:center; margin-top:1rem; }
+
+#nextQuestionBtn { margin-top: 1rem; }
+.emoji { font-size:clamp(2.5rem,6vw,3.5rem); margin:0.8rem 0; }
+
+/* ========== ANIMATIONS ========== */
+@keyframes bounce { from{transform:scale(1);} to{transform:scale(1.1);} }
+@keyframes fall { 0%{opacity:1; transform:translateY(0) rotate(0deg);} 100%{opacity:0; transform:translateY(500px) rotate(360deg);} }
+.confetti { position:absolute; pointer-events:none; z-index:9999; font-size:2rem; animation:fall 2s linear forwards; }
+
+a { color:var(--accent); text-decoration:underline; font-weight:bold; font-size: clamp(1.1rem, 3vw, 1.4rem); }
+.error { color: var(--feedback-wrong); margin: 0.8rem 0; min-height: 1.8em; text-align: center; font-size: clamp(1.1rem, 3vw, 1.4rem); }
+
+/* ========== MUTE BUTTON ========== */
+#muteBtn { position: fixed; bottom: 1rem; left: 1rem; background: var(--accent); border: none; border-radius: 50%; color: #fff; font-size: 1.5rem; width: 3.5rem; height: 3.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+#muteBtn:hover { transform: scale(1.1); }
+
+/* ========== LOCK ICON ========== */
+.lock-icon { position: absolute; right: 10px; font-size: 1.3rem; }
+
+/* ========== PREMIUM MODAL ========== */
+.premium-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
+}
+
+.premium-modal.active {
+  display: flex;
+}
+
+.premium-content {
+  background: white;
+  border-radius: 20px;
+  padding: 25px;
+  text-align: center;
+  max-width: 90%;
+  width: 380px;
+  color: #333;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border: 3px solid var(--accent);
+}
+
+.premium-content h2 {
+  color: var(--accent);
+  margin-bottom: 15px;
+  font-size: 1.8rem;
+}
+
+.premium-content p {
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+  line-height: 1.4;
+}
+
+.activation-section {
+  margin: 20px 0;
+}
+
+.activation-input {
+  padding: 12px;
+  border: 2px solid var(--accent);
+  border-radius: 15px;
+  background: white;
+  color: #333;
+  text-align: center;
+  font-weight: bold;
+  width: 100%;
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.activation-btn {
+  background: linear-gradient(135deg, #00b09b, #96c93d);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  padding: 12px 20px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 15px rgba(0, 176, 155, 0.4);
+  transition: all 0.3s ease;
+}
+
+.activation-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 176, 155, 0.6);
+}
+
+.activation-btn:active {
+  transform: translateY(0);
+}
+
+.buy-btn {
+  background: linear-gradient(135deg, #FF4081, #F50057);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  padding: 12px 20px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  font-size: 1.2rem;
+}
+
+.close-modal {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  padding: 10px 20px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  width: 100%;
+  font-size: 1.2rem;
+}
+
+/* ========== PREMIUM WELCOME ========== */
+.premium-welcome {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 25px;
+  border-radius: 20px;
+  text-align: center;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  border: 2px solid #FF4081;
+  max-width: 80%;
+  font-size: 1.2rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ========== WELCOME SCREEN ========== -->
+<div class="card" id="welcomeScreen">
+  <div class="emoji">🌟🎮📚</div>
+  <h1>PlayToShine</h1>
+  <p>🧠 Fun learning games in Maths, English, Science, General Knowledge, Computing & Good Manners.</p>
+  <p><strong>First 5 topics are FREE!</strong> Start learning now!</p>
+  <button id="startBtn" class="btn">Start Playing 🎯</button>
+  
+  <footer style="text-align:center; margin-top:1rem;">
+    <a>Powered by</a><br/>
+    <a>playtoshine.com</a><br/>
+  </footer>
+</div>
+
+<!-- ========== QUIZ SECTION ========== -->
+<div class="quiz" id="quizSection" style="display:none;">
+  <header id="header">
+    <span id="headerTitle">🎯 Choose a Subject 🎯</span>
+  </header>
+  <main>
+    <!-- ========== TOPICS LIST ========== -->
+    <section id="topics" class="topic-list visible">
+      <!-- FREE TOPICS -->
+      <button class="nav-btn free" data-topic="Maths">🔢 Maths</button>
+      <button class="nav-btn free" data-topic="English">🔤 English</button>
+      <button class="nav-btn free" data-topic="Science">🔬 Science</button>
+      <button class="nav-btn free" data-topic="Computing">💻 Computing</button>
+      <button class="nav-btn free" data-topic="General Knowledge I">🌍 General Knowledge I</button>
+      
+      <!-- PREMIUM TOPICS -->
+      <button class="nav-btn premium locked" data-topic="General Knowledge II">🌟 General Knowledge II <span class="lock-icon">🔒</span></button>
+      <button class="nav-btn premium locked" data-topic="Courtesy and Good Manners">🙏 Courtesy & Good Manners <span class="lock-icon">🔒</span></button>
+    </section>
+
+    <!-- ========== QUIZ SECTION ========== -->
+    <section id="quiz" class="question-container">
+      <div class="timer" id="timer">⏳ 30s</div>
+      <h3 id="question"></h3>
+      <div id="answers"></div>
+      <div id="feedback" class="feedback"></div>
+      <button id="nextQuestionBtn" class="small-btn">➡️ Next</button>
+    </section>
+
+    <!-- ========== RESULTS SECTION ========== -->
+    <section id="result" class="result-container">
+      <h2>🎉 Well Done! 🎉</h2>
+      <p class="score" id="score"></p>
+      <p>👏 You're amazing! Keep up the great work and learn more every day! 💪🌟</p>
+      <div class="button-group">
+        <button id="replayBtn" class="small-btn">🔄 Replay</button>
+        <button id="nextTopicBtn" class="small-btn">➡️ Next Topic</button>
+        <button id="backBtn" class="small-btn">🏠 Back to Topics</button>
+      </div>
+      <p style="margin-top:1rem; font-size:1.3rem;">
+        <a href="https://playtoshine.com" target="_blank">✨ I want more!</a>
+      </p>
+    </section>
+  </main>
+  <button id="muteBtn" title="Mute/Unmute">🔇</button>
+</div>
+
+<!-- ========== PREMIUM MODAL ========== -->
+<div class="premium-modal" id="premiumModal">
+  <div class="premium-content">
+    <h2>🔒 Premium Content</h2>
+    <p>This topic is part of our premium content. Unlock all topics to continue learning!</p>
+    
+    <div class="activation-section">
+      <p><strong>Already have a license key?</strong></p>
+      <input type="text" class="activation-input" id="activationInput" placeholder="Enter license key">
+      <button class="activation-btn" id="activateBtn">Activate Premium</button>
+    </div>
+    
+    <p><strong>Or purchase a license:</strong></p>
+    <button class="buy-btn" id="buyKeyBtn">🎮 Get Premium Access - $37</button>
+    
+    <button class="close-modal" id="closeModal">Continue with Free Topics</button>
+  </div>
+</div>
+
+<!-- ========== AUDIO FILES ========== -->
+<audio id="buttonSound" src="button.mp3"></audio>
+<audio id="tapSound" src="tap.mp3"></audio>
+<audio id="correctSound" src="correct.mp3"></audio>
+<audio id="wrongSound" src="wrong.mp3"></audio>
+<audio id="completeSound" src="complete.mp3"></audio>
+<audio id="bgMusic" src="background.mp3" loop></audio>
+<audio id="bgMusic1" src="background1.mp3" loop></audio>
+<audio id="bgMusic2" src="background2.mp3" loop></audio>
+
+<script>
+// ========== DYNAMIC COLOR SYSTEM ==========
+const solidColors = [
+  "#FF1744", // Vibrant Red
+  "#2979FF", // Bright Blue
+  "#00C853", // Electric Green
+  "#AA00FF", // Royal Purple
+  "#FF9100", // Orange
+  "#00BFA5", // Teal
+  "#D500F9", // Magenta
+  "#FF6D00", // Amber
+  "#00ACC1", // Cyan
+  "#C51162", // Deep Pink
+  "#FFD600", // Yellow
+  "#304FFE"  // Deep Blue
+];
+
+function applyDynamicColours() {
+  const topicButtons = document.querySelectorAll(".nav-btn");
+  topicButtons.forEach((btn, i) => {
+    // Remove any CSS that might be forcing blue color
+    btn.style.cssText = '';
+    
+    const color = solidColors[i % solidColors.length];
+    
+    // Apply styles directly and explicitly - FORCE the colors
+    btn.style.background = color + ' !important';
+    btn.style.backgroundColor = color + ' !important';
+    btn.style.backgroundImage = 'none !important';
+    btn.style.color = "#fff !important";
+    btn.style.boxShadow = "0 4px 15px rgba(0,0,0,0.3) !important";
+    btn.style.border = "none !important";
+    btn.style.display = "block !important";
+    btn.style.opacity = "1 !important";
+    btn.style.visibility = "visible !important";
+    
+    // Set important flags directly on element
+    btn.setAttribute('style', 
+      'background: ' + color + ' !important; ' +
+      'background-color: ' + color + ' !important; ' +
+      'color: #fff !important; ' +
+      'box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important; ' +
+      'border: none !important;'
+    );
+    
+    // Force a re-render
+    btn.offsetHeight;
+  });
+  
+  // Double-check after a brief delay to ensure styles stick
+  setTimeout(() => {
+    topicButtons.forEach((btn, i) => {
+      const color = solidColors[i % solidColors.length];
+      const currentStyle = btn.getAttribute('style') || '';
+      if (!currentStyle.includes('background:')) {
+        btn.setAttribute('style', 
+          'background: ' + color + ' !important; ' +
+          'background-color: ' + color + ' !important; ' +
+          'color: #fff !important; ' +
+          'box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important; ' +
+          'border: none !important;'
+        );
+      }
+    });
+  }, 100);
+}
+
+// ========== BACKGROUND MUSIC ROTATION SYSTEM ==========
+let currentBgMusicIndex = 0;
+const bgMusicFiles = ['bgMusic', 'bgMusic1', 'bgMusic2'];
+
+function playNextBackgroundMusic() {
+  // Stop current background music
+  const currentBg = document.getElementById(bgMusicFiles[currentBgMusicIndex]);
+  if (currentBg) {
+    currentBg.pause();
+    currentBg.currentTime = 0;
+  }
+  
+  // Move to next music file
+  currentBgMusicIndex = (currentBgMusicIndex + 1) % bgMusicFiles.length;
+  
+  // Play next background music if not muted
+  const nextBg = document.getElementById(bgMusicFiles[currentBgMusicIndex]);
+  if (nextBg && !isMuted) {
+    nextBg.volume = 0.3;
+    nextBg.play().catch(e => {
+      console.log('Background music play failed:', e);
+      // If this file doesn't exist, try the next one
+      setTimeout(() => playNextBackgroundMusic(), 100);
+    });
+  }
+}
+
+function getCurrentBackgroundMusic() {
+  return document.getElementById(bgMusicFiles[currentBgMusicIndex]);
+}
+
+// Initialize all background music elements
+function initializeAllBackgroundMusic() {
+  bgMusicFiles.forEach(musicId => {
+    const bgMusic = document.getElementById(musicId);
+    if (bgMusic) {
+      bgMusic.volume = 0.3;
+      bgMusic.loop = true;
+    }
+  });
+}
+
+// ========== PREMIUM ACTIVATION SYSTEM ==========
+const premiumCodes = [
+    'PLAY2024', 'QUIZ555', 'LEARN99', 'EDU77', 
+    'KNOWLEDGE88', 'BRAIN66', 'SMART44', 'GENIUS33',
+    'SHINE2024', 'FUN55', 'STUDY88'
+];
+
+let premiumUnlocked = false;
+let attemptedPremiumTopic = "";
+
+// DOM elements
+const welcomeScreen = document.getElementById("welcomeScreen");
+const quizSection = document.getElementById("quizSection");
+const startBtn = document.getElementById("startBtn");
+const premiumModal = document.getElementById("premiumModal");
+const activationInput = document.getElementById("activationInput");
+const activateBtn = document.getElementById("activateBtn");
+const buyKeyBtn = document.getElementById("buyKeyBtn");
+const closeModal = document.getElementById("closeModal");
+
+function validateActivationCode(code) {
+    return premiumCodes.includes(code.toUpperCase().trim());
+}
+
+function unlockPremiumFeatures() {
+    premiumUnlocked = true;
+    localStorage.setItem('playtoshine_premium', 'true');
+    
+    // Unlock ALL premium buttons
+    document.querySelectorAll('.nav-btn.premium.locked').forEach(btn => {
+        btn.classList.remove('locked');
+        const lock = btn.querySelector('.lock-icon');
+        if (lock) lock.style.display = 'none';
+    });
+    
+    premiumModal.classList.remove('active');
+    showPremiumWelcome();
+    
+    // Start the quiz for the attempted premium topic
+    if (attemptedPremiumTopic) {
+        startQuiz(attemptedPremiumTopic);
+    }
+}
+
+function showPremiumWelcome() {
+    const welcomeMsg = document.createElement('div');
+    welcomeMsg.className = 'premium-welcome';
+    welcomeMsg.innerHTML = `
+        <h2 style="margin-bottom: 15px; color: #FF4081;">🎉 Welcome to PlayToShine PRO!</h2>
+        <p style="margin-bottom: 20px;">You now have access to all learning categories and exclusive educational content!</p>
+        <button onclick="this.parentElement.remove()" style="
+            background: #FF4081;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.2rem;
+        ">Start Learning</button>
+    `;
+    document.body.appendChild(welcomeMsg);
+}
+
+function showPremiumModal(topic) {
+    attemptedPremiumTopic = topic;
+    premiumModal.classList.add('active');
+}
+
+function checkPremiumStatus() {
+    if (localStorage.getItem('playtoshine_premium') === 'true') {
+        unlockPremiumFeatures();
+    }
+}
+
+// Event listeners for activation
+activateBtn.addEventListener('click', function() {
+    const code = activationInput.value;
+    if (validateActivationCode(code)) {
+        unlockPremiumFeatures();
+    } else {
+        alert('❌ Invalid activation code. Please check and try again.');
+    }
+});
+
+activationInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        activateBtn.click();
+    }
+});
+
+buyKeyBtn.addEventListener('click', function() {
+    window.open('https://hubtel.com/pay/playtoshine','_blank');
+});
+
+closeModal.addEventListener('click', function() {
+    premiumModal.classList.remove('active');
+    attemptedPremiumTopic = "";
+});
+
+startBtn.addEventListener('click', function() {
+    welcomeScreen.style.display = 'none';
+    quizSection.style.display = 'block';
+    checkPremiumStatus();
+    showTopics();
+});
+
+// Check premium status on load
+document.addEventListener('DOMContentLoaded', () => {
+    checkPremiumStatus();
+    initializeAllBackgroundMusic();
+});
+
+// ========== ENHANCED SOUND MANAGEMENT ==========
+let isMuted = false;
+let currentSound = null;
+
+// Enhanced sound playback with background music management
+function playSound(id) {
+    if (isMuted) return;
+    
+    const sound = document.getElementById(id + 'Sound');
+    if (!sound) return;
+    
+    // Stop any currently playing sound (except background music)
+    if (currentSound && currentSound !== getCurrentBackgroundMusic() && !currentSound.paused) {
+        currentSound.pause();
+        currentSound.currentTime = 0;
+    }
+    
+    // Pause background music when playing other sounds
+    const currentBg = getCurrentBackgroundMusic();
+    if (id !== 'bg' && currentBg && !currentBg.paused) {
+        currentBg.pause();
+        
+        // Set up background music to resume when current sound ends
+        sound.onended = function() {
+            if (!isMuted && !currentSound && currentBg) {
+                currentBg.play().catch(e => console.log('Background music resume failed:', e));
+            }
+            currentSound = null;
+        };
+    }
+    
+    try {
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log('Sound play error:', e));
+        currentSound = sound;
+    } catch (e) {
+        console.log('Sound error:', e);
+    }
+}
+
+function playQuestionSound() { 
+    playSound('tap'); 
+}
+
+// Initialize background music
+function initBackgroundMusic() {
+    const bgMusic = getCurrentBackgroundMusic();
+    if (bgMusic) {
+        bgMusic.volume = 0.3;
+        bgMusic.loop = true;
+        
+        // Try to play background music automatically
+        const playBgMusic = () => {
+            if (!isMuted) {
+                bgMusic.play().then(() => {
+                    console.log('Background music started');
+                }).catch(e => {
+                    console.log('Autoplay failed, will play after user interaction:', e);
+                    // If autoplay fails, set up to play after user interaction
+                    document.addEventListener('click', function startMusicOnInteraction() {
+                        if (!isMuted && bgMusic.paused) {
+                            bgMusic.play().catch(e => console.log('Background music play failed:', e));
+                        }
+                        document.removeEventListener('click', startMusicOnInteraction);
+                    }, { once: true });
+                });
+            }
+        };
+        
+        playBgMusic();
+    }
+}
+
+// Mute button functionality
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.onclick = () => {
+    isMuted = !isMuted;
+    
+    if (isMuted) {
+        // Mute all sounds
+        const currentBg = getCurrentBackgroundMusic();
+        if (currentBg) {
+            currentBg.pause();
+        }
+        if (currentSound && !currentSound.paused) {
+            currentSound.pause();
+        }
+        muteBtn.textContent = "🔇";
+    } else {
+        // Unmute - restart background music if no other sound is playing
+        const currentBg = getCurrentBackgroundMusic();
+        if (currentBg && (!currentSound || currentSound === currentBg)) {
+            currentBg.play().catch(e => console.log('Background music restart failed:', e));
+        }
+        muteBtn.textContent = "🔊";
+    }
+};
+
+// Initialize sound system when page loads
+window.addEventListener("DOMContentLoaded", () => {
+    initBackgroundMusic();
+});
+
+// ========== QUIZ LOGIC ==========
+const headerTitle = document.getElementById("headerTitle"),
+      topicsEl = document.getElementById("topics"),
+      quizEl = document.getElementById("quiz"),
+      resultEl = document.getElementById("result"),
+      questionEl = document.getElementById("question"),
+      answersEl = document.getElementById("answers"),
+      timerEl = document.getElementById("timer"),
+      scoreEl = document.getElementById("score"),
+      feedbackEl = document.getElementById("feedback"),
+      nextBtn = document.getElementById("nextQuestionBtn");
+
+// ========== QUIZ CONTENT ==========
+const topics = {
+  "Maths":[
+    {q:"🍎 Sarah has 3 apples and buys 2 more. How many apples does she have now?", a:["4","5","6"], c:"5"},
+    {q:"➗ What is 10 ÷ 2?", a:["3","5","8"], c:"5"}
+  ],
+  "English":[
+    {q:"📝 Which word is a noun?", a:["Run","Pencil","Quickly"], c:"Pencil"},
+    {q:"🔠 What is the opposite of 'happy'?", a:["Sad","Angry","Excited"], c:"Sad"}
+  ],
+  "Science":[
+    {q:"🌞 What helps plants grow?", a:["Moonlight","Sunlight","Candles"], c:"Sunlight"},
+    {q:"💧 What is H₂O?", a:["Water","Salt","Sugar"], c:"Water"}
+  ],
+  "Computing":[
+    {q:"🖥️ What do we use a computer for?", a:["To eat food","To play and learn","To sleep"], c:"To play and learn"},
+    {q:"⌨️ What do we type with?", a:["Mouse","Keyboard","Screen"], c:"Keyboard"}
+  ],
+  "General Knowledge I":[
+    {q:"🦁 Which animal is known as the king of the jungle?", a:["Elephant","Lion","Tiger"], c:"Lion"},
+    {q:"🌈 How many colors are in a rainbow?", a:["5","7","9"], c:"7"}
+  ],
+  "General Knowledge II":[
+    {q:"🐱 What is a baby cat called?", a:["Kitten","Foal","Chick"], c:"Kitten"},
+    {q:"🌊 Which ocean is the largest?", a:["Atlantic","Indian","Pacific"], c:"Pacific"}
+  ],
+  "Courtesy and Good Manners":[
+    {q:"🙏 What do you say when someone gives you something?", a:["Please","Hello","Thank you"], c:"Thank you"},
+    {q:"🚪 What should you do before entering someone's room?", a:["Run in","Knock","Shout"], c:"Knock"}
+  ]
+};
+
+let currentTopic="", currentQuestions=[], currentIndex=0, score=0, timer=null, timeLeft=30, quizActive=false;
+
+function showTopics(){ 
+    // Force color application immediately when topics are shown
+    setTimeout(applyDynamicColours, 50);
+    
+    headerTitle.textContent="🎯 Choose a Topic 🎯"; 
+    topicsEl.classList.add("visible"); 
+    quizEl.classList.remove("visible"); 
+    resultEl.classList.remove("visible"); 
+    // Apply dynamic colors every time topics are shown
+    applyDynamicColours();
+}
+
+function startQuiz(t){ 
+    // Check if topic is premium and locked
+    const btn = document.querySelector(`[data-topic="${t}"]`);
+    if (btn.classList.contains('premium') && !premiumUnlocked) {
+        showPremiumModal(t);
+        return;
+    }
+    
+    currentTopic=t; 
+    currentQuestions=topics[t]; 
+    currentIndex=0; 
+    score=0; 
+    quizActive=true; 
+    topicsEl.classList.remove("visible"); 
+    quizEl.classList.add("visible"); 
+    resultEl.classList.remove("visible"); 
+    showQuestion(); 
+    updateHeader(); 
+}
+
+function updateHeader(){ 
+    headerTitle.textContent = `🎯 ${currentTopic} | Q${currentIndex+1}/${currentQuestions.length}`; 
+}
+
+function showQuestion(){ 
+    if(currentIndex>=currentQuestions.length){ 
+        endQuiz(); 
+        return; 
+    } 
+    quizActive=true; 
+    feedbackEl.textContent=""; 
+    feedbackEl.className="feedback"; 
+    nextBtn.style.display="none"; 
+    const q=currentQuestions[currentIndex]; 
+    questionEl.textContent=q.q; 
+    answersEl.innerHTML=""; 
+    playQuestionSound(); 
+    q.a.forEach(a=>{ 
+        const b=document.createElement("button"); 
+        b.textContent=a; 
+        b.className="answer-btn"; 
+        b.onclick=()=>checkAnswer(a,b); 
+        answersEl.appendChild(b); 
+    }); 
+    timeLeft=30; 
+    updateTimer(); 
+    startTimer(); 
+    updateHeader(); 
+}
+
+function spawnConfetti(){ 
+    const emojis=["🎉","✨","🌟","💫","🎊"]; 
+    for(let i=0;i<15;i++){ 
+        const span=document.createElement("span"); 
+        span.textContent = emojis[Math.floor(Math.random()*emojis.length)]; 
+        span.className = "confetti"; 
+        span.style.left = Math.random()*100 + "vw"; 
+        span.style.top = "-5vh"; 
+        span.style.animationDuration = (1.8 + Math.random()*1.6) + "s"; 
+        document.body.appendChild(span); 
+        setTimeout(()=>{ 
+            if(span && span.parentNode) span.remove(); 
+        }, 2600); 
+    } 
+}
+
+function checkAnswer(sel,btn){ 
+    if(!quizActive) return; 
+    quizActive=false; 
+    clearInterval(timer); 
+    const q=currentQuestions[currentIndex]; 
+    const all=document.querySelectorAll(".answer-btn"); 
+    all.forEach(b=>b.disabled=true); 
+    if(sel===q.c){ 
+        score++; 
+        feedbackEl.textContent="🎉 Correct!"; 
+        feedbackEl.className="feedback correct"; 
+        btn.classList.add("correct"); 
+        playSound("correct"); 
+    } else { 
+        feedbackEl.textContent=`❌ Oops! Correct: ${q.c}`; 
+        feedbackEl.className="feedback incorrect"; 
+        btn.classList.add("incorrect"); 
+        playSound("wrong"); 
+        all.forEach(b=>{ 
+            if(b.textContent===q.c) b.classList.add("correct"); 
+        }); 
+    } 
+    nextBtn.style.display="inline-block"; 
+}
+
+function startTimer(){ 
+    stopTimer(); 
+    timer=setInterval(()=>{ 
+        timeLeft--; 
+        updateTimer(); 
+        if(timeLeft<=0){ 
+            stopTimer(); 
+            if(quizActive){ 
+                quizActive=false; 
+                const q=currentQuestions[currentIndex]; 
+                document.querySelectorAll(".answer-btn").forEach(b=>b.disabled=true); 
+                document.querySelectorAll(".answer-btn").forEach(b=>{ 
+                    if(b.textContent===q.c) b.classList.add("correct"); 
+                }); 
+                feedbackEl.textContent=`⌛ Time's up! Correct: ${q.c}`; 
+                feedbackEl.className="feedback incorrect"; 
+                playSound("wrong"); 
+                nextBtn.style.display="inline-block"; 
+            } 
+        } 
+    }, 1000); 
+}
+
+function stopTimer(){ 
+    if(timer){ 
+        clearInterval(timer); 
+        timer=null; 
+    } 
+}
+
+function updateTimer(){ 
+    timerEl.textContent=`⏳ ${timeLeft}s`; 
+}
+
+nextBtn.onclick=()=>{ 
+    playSound("button"); 
+    currentIndex++; 
+    showQuestion(); 
+};
+
+function endQuiz(){ 
+    quizEl.classList.remove("visible"); 
+    resultEl.classList.add("visible"); 
+    scoreEl.textContent=`✅ You scored ${score} out of ${currentQuestions.length}!`; 
+    playSound("complete"); 
+    spawnConfetti(); 
+}
+
+document.getElementById("replayBtn").onclick=()=>{ 
+    playSound("button"); 
+    startQuiz(currentTopic); 
+};
+
+document.getElementById("nextTopicBtn").onclick=()=>{ 
+    playSound("button"); 
+    const keys=Object.keys(topics); 
+    const idx=keys.indexOf(currentTopic); 
+    const nextT=keys[(idx+1)%keys.length]; 
+    
+    // Change background music when switching to next topic
+    playNextBackgroundMusic();
+    
+    startQuiz(nextT); 
+};
+
+document.getElementById("backBtn").onclick=()=>{ 
+    playSound("button"); 
+    showTopics(); 
+};
+
+document.querySelectorAll(".nav-btn").forEach(b=>{ 
+    b.onclick=()=>{ 
+        playSound("button"); 
+        startQuiz(b.dataset.topic); 
+    }; 
+});
+
+// ========== TOUCH AND ZOOM PREVENTION ==========
+(function disableZooms(){ 
+    window.addEventListener('touchstart', function(e){ if(e.touches.length>1) e.preventDefault(); }, {passive:false});
+    window.addEventListener('touchmove', function(e){ if(e.touches.length>1) e.preventDefault(); }, {passive:false});
+    window.addEventListener('gesturestart', function(e){ e.preventDefault(); }, {passive:false});
+    window.addEventListener('gesturechange', function(e){ e.preventDefault(); }, {passive:false});
+    window.addEventListener('gestureend', function(e){ e.preventDefault(); }, {passive:false});
+    window.addEventListener('wheel', function(e){ if(e.ctrlKey||e.metaKey) e.preventDefault(); }, {passive:false});
+    window.addEventListener('keydown', function(e){ if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key)) e.preventDefault(); }, {passive:false});
+    let lastTouch=0; 
+    document.addEventListener('touchend', function(e){ 
+        const now=new Date().getTime(); 
+        if(now-lastTouch<=300) e.preventDefault(); 
+        lastTouch=now; 
+    }, {passive:false}); 
+})();
+</script>
+</body>
+</html>

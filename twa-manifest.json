@@ -1,0 +1,14 @@
+{
+  "packageId": "com.pts.demo",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "appName": "PTS Demo",
+  "launcherName": "PTSDemo",
+  "startUrl": "https://trypts.netlify.app",
+  "webManifestUrl": "https://trypts.netlify.app/manifest.json",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#ff4dc4",
+  "backgroundColor": "#fef6f9",
+  "iconUrl": "https://trypts.netlify.app/icon-512.png"
+}

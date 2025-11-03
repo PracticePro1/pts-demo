@@ -1,0 +1,7 @@
+1. COPY THE FOLLOWING AND PASTE IN CMD
+
+
+jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore "C:\Users\Francis Osae Otopah\Desktop\SIGNING\my-release-key.jks" "C:\Users\Francis Osae Otopah\Desktop\SIGNING\myapp.apk" my-key-alias
+
+
+2. Keystore Password is 123456

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+<title>PlayToShine Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-gradient: linear-gradient(135deg, #ffffff, #f1f1f1);
+  --text: #000000;
+  --accent: #d50000;
+  --btn-bg: #2962ff;
+  --btn-hover: #0039cb;
+  --input-bg: #ffffff;
+  --timer-color: #ff6f00;
+  --feedback-correct: #00c853;
+  --feedback-wrong: #dd2c00;
+  --result-color: #aa00ff;
+  --answer-bg: #e3f2fd;
+  --answer-hover: #bbdefb;
+  --answer-correct: #b9f6ca;
+  --answer-incorrect: #ff8a80;
+}
+
+/* Reset & base */
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  overflow:hidden; touch-action:none;
+  font-family: 'Fredoka', sans-serif;
+  background: var(--bg-gradient); color: var(--text);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+}
+body { -webkit-user-select:none; user-select:none; }
+
+/* Container */
+.card, #quizSection { width:100%; max-width:900px; padding:clamp(1rem, 2vw, 2rem); display:flex; flex-direction:column; align-items:center; }
+
+/* Typography */
+h1 { font-size:clamp(2rem,5vw,3rem); color:var(--accent); margin:1rem 0; text-align:center; }
+h2 { font-size:clamp(1.8rem,4vw,2.5rem); text-align:center; color:var(--accent); }
+h3 { font-size: clamp(1.4rem, 3.5vw, 2rem); margin: 1rem 0; text-align: center; color:var(--accent); }
+p { font-size:clamp(1rem,2.5vw,1.4rem); margin:0.5rem 0; text-align:center; line-height:1.4; }
+.password { display:none; }
+input { margin-top:1rem; padding:1rem; width:80%; max-width:400px; border-radius:1rem; border:2px solid var(--accent); background:var(--input-bg); font-size:clamp(1rem,2.5vw,1.2rem); text-align:center; font-weight:bold; }
+
+/* Buttons */
+.btn, .nav-btn, .small-btn, .answer-btn {
+  border:none; border-radius:2rem; cursor:pointer; font-weight:bold;
+  transition: transform 0.2s, background 0.3s;
+}
+.btn { padding:0.6rem 1.5rem; font-size:clamp(1rem,2.5vw,1.2rem); color:#fff; background:var(--btn-bg); width:200px; }
+.btn:hover { background:var(--btn-hover); transform:scale(1.05); }
+.btn:disabled { background:#ccc; cursor:not-allowed; }
+
+.nav-btn { width:90%; max-width:300px; margin:0.5rem 0; padding:clamp(0.8rem,2vw,1rem); font-size:clamp(1rem,2.5vw,1.2rem); text-align:center; color:#fff; border-radius:1rem; }
+.nav-maths { background:#ff1744; }
+.nav-english { background:#2979ff; }
+.nav-science { background:#00c853; }
+.nav-computing { background:#aa00ff; }
+.nav-gk1 { background:#ff9100; }
+.nav-gk2 { background:#00bfa5; }
+.nav-courtesy { background:#d500f9; }
+.nav-btn:hover { opacity:0.9; transform:scale(1.05); }
+
+.small-btn { margin:0.4rem; padding:0.6rem 1.2rem; font-size:clamp(0.9rem,2vw,1.1rem); background:var(--accent); color:#fff; border-radius:1rem; }
+.small-btn:hover { background:var(--btn-hover); transform:scale(1.05); }
+
+.answer-btn { 
+  width: 90%; max-width: 500px;
+  margin: 0.5rem 0; 
+  padding: clamp(0.8rem, 2vw, 1rem); 
+  font-size: clamp(1rem, 2.5vw, 1.2rem); 
+  background: var(--answer-bg);
+  color: var(--text);
+  text-align: center;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  display: flex; justify-content:center; align-items: center;
+}
+.answer-btn:hover { background: var(--answer-hover); transform: scale(1.02); }
+.answer-btn:disabled { cursor: not-allowed; }
+.answer-btn.correct { background: var(--answer-correct); }
+.answer-btn.incorrect { background: var(--answer-incorrect); }
+
+/* Header & Timer */
+header { width:100%; background:var(--accent); color:#fff; padding:clamp(0.8rem,2vw,1rem); font-size:clamp(1.5rem,4vw,1.8rem); font-weight:bold; position:relative; text-align:center; display:flex; align-items:center; justify-content:center; }
+#headerTitle { pointer-events:none; }
+
+.timer { font-size:clamp(1.5rem,3vw,1.8rem); color:var(--timer-color); font-weight:bold; margin:1rem 0; }
+
+.feedback { font-size:clamp(1.2rem,2.5vw,1.4rem); margin:1rem 0; min-height:2em; font-weight:bold; }
+.feedback.correct { color:var(--feedback-correct); }
+.feedback.incorrect { color:var(--feedback-wrong); }
+.score { font-size:clamp(1.8rem,4vw,2.2rem); color:var(--feedback-correct); animation:bounce 1.2s infinite alternate; font-weight:bold; }
+
+#quizSection { display:none; width:100%; flex-direction:column; align-items:center; }
+.topic-list, .question-container, .result-container { width:100%; display:none; flex-direction:column; align-items:center; }
+.topic-list.visible, .question-container.visible, .result-container.visible { display:flex; }
+.topic-list { max-height:70vh; overflow-y:auto; padding-right:0.5rem; }
+
+.question-container { max-height: 80vh; overflow-y: auto; padding-right: 0.5rem; }
+
+.button-group { display:flex; flex-wrap:wrap; justify-content:center; margin-top:1rem; }
+
+#nextQuestionBtn { margin-top: 1rem; }
+.emoji { font-size:clamp(2.5rem,6vw,4rem); margin:0.5rem 0; }
+
+@keyframes bounce { from{transform:scale(1);} to{transform:scale(1.1);} }
+@keyframes fall { 0%{opacity:1; transform:translateY(0) rotate(0deg);} 100%{opacity:0; transform:translateY(500px) rotate(360deg);} }
+.confetti { position:absolute; pointer-events:none; z-index:9999; font-size:2rem; animation:fall 2s linear forwards; }
+
+a { color:var(--accent); text-decoration:underline; font-weight:bold; }
+.error { color: var(--feedback-wrong); margin: 0.5rem 0; min-height: 1.5em; text-align: center; }
+
+#muteBtn { position: fixed; bottom: 1rem; left: 1rem; background: var(--accent); border: none; border-radius: 50%; color: #fff; font-size: 1.5rem; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+#muteBtn:hover { transform: scale(1.1); }
+</style>
+</head>
+<body>
+
+<!-- Licence Section -->
+<div class="card" id="licenceSection">
+  <div class="emoji">🌟🎮📚</div>
+  <h1>PTS Demo</h1>
+  <p>🧠 Fun learning games in Maths, English, Science, General Knowledge, Computing & Good Manners.</p>
+  <input type="text" id="licenceKey" placeholder="Enter licence key" />
+  <div class="error" id="errorMsg"></div>
+
+  <!-- Bright Buy Key button -->
+  <button id="buyKeyBtn" class="btn" onclick="window.open('https://hubtel.com/pay/playtoshine','_blank')" style="display:none; background:#ff1744;">
+    💳 Buy a Key
+  </button>
+
+  <button id="verifyBtn" class="btn">Play Now</button>
+
+  <footer style="text-align:center; margin-top:1rem;">
+    <a>Powered by</a><br/>
+    <a>playtoshine.com</a><br/>
+  </footer>
+</div>
+
+<!-- Quiz Section -->
+<div class="quiz" id="quizSection" style="display:none;">
+  <header id="header">
+    <span id="headerTitle">🎯 Choose a Subject 🎯</span>
+  </header>
+  <main>
+    <section id="topics" class="topic-list visible">
+      <button class="nav-btn nav-maths" data-topic="Maths">🔢 Maths</button>
+      <button class="nav-btn nav-english" data-topic="English">🔤 English</button>
+      <button class="nav-btn nav-science" data-topic="Science">🔬 Science</button>
+      <button class="nav-btn nav-computing" data-topic="Computing">💻 Computing</button>
+      <button class="nav-btn nav-gk1" data-topic="General Knowledge I">🌍 General Knowledge I</button>
+      <button class="nav-btn nav-gk2" data-topic="General Knowledge II">🌟 General Knowledge II</button>
+      <button class="nav-btn nav-courtesy" data-topic="Courtesy and Good Manners">🙏 Courtesy & Good Manners</button>
+    </section>
+
+    <section id="quiz" class="question-container">
+      <div class="timer" id="timer">⏳ 30s</div>
+      <h3 id="question"></h3>
+      <div id="answers"></div>
+      <div id="feedback" class="feedback"></div>
+      <button id="nextQuestionBtn" class="small-btn">➡️ Next</button>
+    </section>
+
+    <section id="result" class="result-container">
+      <h2>🎉 Well Done! 🎉</h2>
+      <p class="score" id="score"></p>
+      <p>👏 You're amazing! Keep up the great work and learn more every day! 💪🌟</p>
+      <div class="button-group">
+        <button id="replayBtn" class="small-btn">🔄 Replay</button>
+        <button id="nextTopicBtn" class="small-btn">➡️ Next Topic</button>
+        <button id="backBtn" class="small-btn">🏠 Back to Topics</button>
+      </div>
+      <p style="margin-top:1rem; font-size:1.2rem;">
+        <a href="https://playtoshine.com" target="_blank">✨ I want more!</a>
+      </p>
+    </section>
+  </main>
+  <button id="muteBtn" title="Mute/Unmute">🔇</button>
+</div>
+
+<audio id="buttonSound" src="button.mp3"></audio>
+<audio id="tapSound" src="tap.mp3"></audio>
+<audio id="correctSound" src="correct.mp3"></audio>
+<audio id="wrongSound" src="wrong.mp3"></audio>
+<audio id="completeSound" src="complete.mp3"></audio>
+<audio id="bgMusic" src="background.mp3" loop></audio>
+
+<script>
+/* ------------------ Licence Validation ------------------ */
+const licenceSection = document.getElementById("licenceSection");
+const quizSection = document.getElementById("quizSection");
+const verifyBtn = document.getElementById("verifyBtn");
+const errorMsg = document.getElementById("errorMsg");
+const licenceKeyInput = document.getElementById("licenceKey");
+const buyKeyBtn = document.getElementById("buyKeyBtn");
+
+const APP_ID = "PTSDEMO";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2nJIYEliP9VGj9sHXg4of2syLsUrsGjtnxSgCoywYq9nBhnBMTkzuIJW714WMUBiw/exec";
+
+// REMOVED the auto-validation on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // No auto-validation - user must always enter key manually
+});
+
+licenceKeyInput.addEventListener('keypress', e => { if(e.key === 'Enter') verifyBtn.click(); });
+
+verifyBtn.addEventListener("click", async () => {
+    const key = licenceKeyInput.value.trim();
+    errorMsg.textContent = "";
+    buyKeyBtn.style.display = "none";
+    if(!key){ errorMsg.textContent="Please enter a licence key."; return; }
+
+    verifyBtn.disabled=true;
+    verifyBtn.textContent="Validating...";
+    errorMsg.textContent="⏳ Please Wait"; errorMsg.style.color="var(--timer-color)";
+
+    try {
+        const response = await fetch(`${SCRIPT_URL}?key=${encodeURIComponent(key)}&app=${encodeURIComponent(APP_ID)}`);
+        const data = await response.json();
+
+        if(data.valid){
+            // REMOVED localStorage.setItem - no storing for offline use
+            errorMsg.textContent="✅ Validated, Welcome."; errorMsg.style.color="var(--feedback-correct)";
+            setTimeout(()=>{ licenceSection.style.display="none"; quizSection.style.display="block"; showTopics(); }, 1000);
+        } else {
+            // REMOVED localStorage.removeItem
+            errorMsg.textContent="❌ Invalid key. Please try again or purchase valid license.";
+            errorMsg.style.color="var(--feedback-wrong)";
+            buyKeyBtn.style.display = "inline-block";
+            verifyBtn.disabled=false;
+            verifyBtn.textContent="Play Now";
+        }
+    } catch(err){
+        console.error("Verification failed:", err);
+        errorMsg.textContent="⚠️ Connection error. Please check your internet and try again.";
+        errorMsg.style.color="var(--feedback-wrong)";
+        verifyBtn.disabled=false;
+        verifyBtn.textContent="Play Now";
+    }
+});
+/* ------------------ End Licence ------------------ */
+
+/* ------------------ Sound Management ------------------ */
+let isMuted=false; let currentSound=null;
+function playSound(id){
+    if(isMuted) return;
+    if(currentSound && !currentSound.paused){ currentSound.pause(); currentSound.currentTime=0; }
+    const sound=document.getElementById(id+'Sound');
+    if(sound){
+        const bg=document.getElementById('bgMusic');
+        if(bg && !bg.paused && id!=='bg'){ bg.pause(); sound.onended=function(){ if(!isMuted && bg) bg.play().catch(()=>{}); currentSound=null; }; }
+        try{ sound.currentTime=0; sound.play().catch(()=>{}); currentSound=sound; } catch(e){}
+    }
+}
+function playQuestionSound(){ playSound('tap'); }
+
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.onclick = ()=>{
+    isMuted=!isMuted;
+    const bg = document.getElementById("bgMusic");
+    if(isMuted){ bg.pause(); if(currentSound){ currentSound.pause(); currentSound.currentTime=0; } muteBtn.textContent="🔇"; }
+    else{ bg.play().catch(()=>{}); muteBtn.textContent="🔊"; }
+};
+
+window.addEventListener("DOMContentLoaded", ()=>{
+    const bgMusic = document.getElementById("bgMusic");
+    bgMusic.volume=0.3;
+    // Always play music on load since no auto-validation
+    bgMusic.play().catch(()=>{});
+});
+
+/* ------------------ Quiz Logic ------------------ */
+const headerTitle = document.getElementById("headerTitle"),
+      topicsEl = document.getElementById("topics"),
+      quizEl = document.getElementById("quiz"),
+      resultEl = document.getElementById("result"),
+      questionEl = document.getElementById("question"),
+      answersEl = document.getElementById("answers"),
+      timerEl = document.getElementById("timer"),
+      scoreEl = document.getElementById("score"),
+      feedbackEl = document.getElementById("feedback"),
+      nextBtn = document.getElementById("nextQuestionBtn");
+
+const topics = {
+"Maths":[{q:"🍎 Sarah has 3 apples and buys 2 more. How many apples does she have now?",a:["4","5","6"],c:"5"},{q:"📏 A pencil is 10cm long. How many pencils make 1 meter?",a:["10","5","100"],c:"10"},{q:"🧃 Emma has 12 juice boxes. She gives 4 to her friends. How many are left?",a:["6","8","9"],c:"8"},{q:"💰 You have 5 coins and each is worth 2 cedis. How much do you have?",a:["10","5","15"],c:"10"},{q:"🚲 John rides his bike 3 km in the morning and 2 km in the afternoon. How far in total?",a:["4 km","5 km","6 km"],c:"5 km"},{q:"🎂 A cake is cut into 8 slices. If you eat 2 slices, what fraction is left?",a:["6/8","4/8","2/8"],c:"6/8"},{q:"👟 If each shoe has 2 laces, how many laces do 3 pairs of shoes have?",a:["6","10","12"],c:"12"},{q:"🐞 There are 7 ladybugs on a leaf and 5 more fly in. How many now?",a:["10","11","12"],c:"12"},{q:"🚌 A bus seats 20 people. If 15 are seated, how many seats are empty?",a:["5","6","7"],c:"5"},{q:"🍬 Tom shares 18 candies among 6 friends. How many candies each?",a:["3","6","2"],c:"3"}],
+"English":[{q:"📝 Which word is a noun?",a:["Run","Pencil","Quickly"],c:"Pencil"},{q:"📚 Which is a verb?",a:["Jump","Blue","Table"],c:"Jump"},{q:"🎨 What is an adjective in this sentence: 'The red ball bounced'?",a:["red","ball","bounced"],c:"red"},{q:"❓ Which word asks a question?",a:["Who","Ball","Fast"],c:"Who"},{q:"📖 Complete: The bird ___ in the sky.",a:["flies","flying","flyed"],c:"flies"},{q:"🔤 What is the plural of 'box'?",a:["boxes","boxs","boxen"],c:"boxes"},{q:"🐕 Which sentence is correct?",a:["He play outside.","She plays outside.","They is happy."],c:"She plays outside."},{q:"📌 What punctuation ends a question?",a:["?","!","."],c:"?"},{q:"🎵 Which word rhymes with 'hat'?",a:["pet","bat","hit"],c:"bat"},{q:"🧠 What is a synonym for 'happy'?",a:["Sad","Joyful","Angry"],c:"Joyful"}],
+"Science":[{q:"🌞 What helps plants grow?",a:["Moonlight","Sunlight","Candles"],c:"Sunlight"},{q:"👃 Which part of your body helps you smell?",a:["Ears","Eyes","Nose"],c:"Nose"},{q:"🐟 Where do fish live?",a:["Sky","Water","Sand"],c:"Water"},{q:"🌬️ What do we breathe in to live?",a:["Water","Oxygen","Smoke"],c:"Oxygen"},{q:"🌝 What do you see in the sky at night?",a:["Moon","Sun","Cloud"],c:"Moon"},{q:"🐝 What do bees make?",a:["Milk","Honey","Butter"],c:"Honey"},{q:"👂 Which part helps you hear?",a:["Eye","Ear","Nose"],c:"Ear"},{q:"💧 What do you drink to stay healthy?",a:["Water","Juice","Soda"],c:"Water"},{q:"🌍 What causes day and night?",a:["Sun’s movement","Earth’s rotation","Clouds"],c:"Earth’s rotation"},{q:"🪨 Which is NOT a living thing?",a:["Rock","Dog","Tree"],c:"Rock"}],
+"General Knowledge I":[{q:"🦁 Which animal is known as the king of the jungle?",a:["Elephant","Lion","Tiger"],c:"Lion"},{q:"🌍 What planet do we live on?",a:["Mars","Venus","Earth"],c:"Earth"},{q:"🚦 What color means stop?",a:["Yellow","Green","Red"],c:"Red"},{q:"🦆 Which animal can swim and quack?",a:["Cat","Cow","Duck"],c:"Duck"},{q:"🌧️ What do you use when it rains?",a:["Hat","Sunglasses","Umbrella"],c:"Umbrella"},{q:"🏠 Where do we live?",a:["House","School","Car"],c:"House"},{q:"🧊 What is made of frozen water?",a:["Steam","Juice","Ice"],c:"Ice"},{q:"🕰️ What tells us the time?",a:["Book","Clock","Shoe"],c:"Clock"},{q:"🦷 What do you brush every morning?",a:["Ears","Teeth","Hair"],c:"Teeth"},{q:"🐾 What do we call a baby dog?",a:["Cub","Puppy","Kitten"],c:"Puppy"}],
+"General Knowledge II":[{q:"🐱 What is a baby cat called?",a:["Kitten","Foal","Chick"],c:"Kitten"},{q:"🐮 What is a baby cow called?",a:["Lamb","Cub","Calf"],c:"Calf"},{q:"🐔 What is a baby chicken called?",a:["Chick","Puppy","Kid"],c:"Chick"},{q:"🦁 What is a baby lion called?",a:["Foal","Calf","Cub"],c:"Cub"},{q:"🐑 What is a baby sheep called?",a:["Lamb","Chick","Kid"],c:"Lamb"},{q:"🐐 What is a baby goat called?",a:["Cub","Kid","Kitten"],c:"Kid"},{q:"🐴 What is a baby horse called?",a:["Chick","Foal","Puppy"],c:"Foal"},{q:"🐻 What is a baby bear called?",a:["Cub","Kid","Calf"],c:"Cub"},{q:"🦆 What is a baby duck called?",a:["Duckling","Foal","Lamb"],c:"Duckling"}],
+"Computing":[{q:"🖥️ What do we use a computer for?",a:["To eat food","To play and learn","To sleep","To ride to school"],c:"To play and learn"},{q:"🔘 What do you press to turn a computer on?",a:["The space bar","The power button","The mouse","The screen"],c:"The power button"},{q:"🖱️ Which one is used to move the pointer on the screen?",a:["Chair","Mouse","Book","Pencil"],c:"Mouse"},{q:"🖵 Which part of the computer shows pictures and words?",a:["Monitor","Keyboard","Mouse","Speaker"],c:"Monitor"},{q:"📁 What do we call the small pictures you click on the screen?",a:["Stamps","Icons","Dots","Keys"],c:"Icons"},{q:"⌨️ What helps us to type letters and numbers on a computer?",a:["Monitor","Mouse","Keyboard","Speaker"],c:"Keyboard"},{q:"🧼 What is the safe way to treat a computer?",a:["Hit the keys very hard","Touch the screen with dirty hands","Use clean hands and be gentle","Pull out the wires"],c:"Use clean hands and be gentle"},{q:"🤝 Which one is a rule when using a computer in class?",a:["Eat near the computer","Share and take turns","Push the computer","Draw on the screen"],c:"Share and take turns"},{q:"🔊 What sound does a speaker make on a computer?",a:["Smell","Taste","Noise or music","Picture"],c:"Noise or music"},{q:"❌ Which of these is not part of a computer?",a:["Mouse","Monitor","Pencil","Keyboard"],c:"Pencil"}],
+"Courtesy and Good Manners":[{q:"🙏 What do you say when someone gives you something?",a:["Please","Hello","Thank you","Now"],c:"Thank you"},{q:"✋ What should you do before speaking in class?",a:["Yell","Raise your hand","Talk over others","Whisper to a friend"],c:"Raise your hand"},{q:"😊 If someone says 'thank you,' what do you say back?",a:["You’re welcome","Please","Yes","No"],c:"You’re welcome"},{q:"🙋‍♂️ What do you say when you need help?",a:["Do it!","Now!","Help!","Can you help me, please?"],c:"Can you help me, please?"},{q:"🚶 You bump into someone by accident. What do you say?",a:["Watch out!","Move!","Oops!","I’m sorry"],c:"I’m sorry"},{q:"👂 When someone is speaking, what should you do?",a:["Talk louder","Interrupt","Listen quietly","Play with toys"],c:"Listen quietly"},{q:"💬 What should you do if you hurt someone’s feelings?",a:["Laugh","Say 'sorry'","Run away","Ignore it"],c:"Say 'sorry'"},{q:"🔁 When you borrow something, what should you do?",a:["Keep it","Say 'thanks' and return it","Forget it","Break it"],c:"Say 'thanks' and return it"},{q:"🎮 If you want to join a game, what should you say?",a:["Let me play!","Move over","Can I play, please?","I’m going to play now"],c:"Can I play, please?"},{q:"🏫 How do you show good manners at school?",a:["Shout in the hallway","Wait your turn","Take things","Talk over the teacher"],c:"Wait your turn"}]
+};
+
+let currentTopic="", currentQuestionIndex=0, score=0, timer, timeLeft=30;
+
+function showTopics(){ topicsEl.classList.add("visible"); quizEl.classList.remove("visible"); resultEl.classList.remove("visible"); headerTitle.textContent="🎯 Choose a Subject 🎯"; }
+
+document.querySelectorAll(".nav-btn").forEach(btn=>btn.onclick=()=>{ currentTopic=btn.dataset.topic; startQuiz(); });
+
+function startQuiz(){ 
+  playSound('button');
+  topicsEl.classList.remove("visible");
+  quizEl.classList.add("visible");
+  resultEl.classList.remove("visible");
+  currentQuestionIndex=0; score=0;
+  headerTitle.textContent="🎯 "+currentTopic;
+  loadQuestion();
+  document.getElementById('bgMusic').play().catch(()=>{});
+}
+
+function loadQuestion(){
+  const q = topics[currentTopic][currentQuestionIndex];
+  if(!q){ showResult(); return; }
+  questionEl.textContent=q.q;
+  answersEl.innerHTML="";
+  q.a.forEach(ans=>{
+    const b=document.createElement("button");
+    b.className="answer-btn";
+    b.textContent=ans;
+    b.onclick=()=>checkAnswer(ans,q.c,b);
+    answersEl.appendChild(b);
+  });
+  feedbackEl.textContent="";
+  nextBtn.style.display="none";
+  resetTimer();
+  playQuestionSound();
+}
+
+function checkAnswer(selected,correct,button){
+  playSound(selected===correct?'correct':'wrong');
+  clearInterval(timer);
+  document.querySelectorAll(".answer-btn").forEach(btn=>{
+    btn.disabled=true;
+    if(btn.textContent===correct) btn.classList.add("correct");
+    else if(btn===button) btn.classList.add("incorrect");
+  });
+  if(selected===correct){ feedbackEl.textContent="✅ Correct!"; feedbackEl.className="feedback correct"; score++; }
+  else{ feedbackEl.textContent="❌ Wrong! Correct: "+correct; feedbackEl.className="feedback incorrect"; }
+  nextBtn.style.display="block";
+}
+
+nextBtn.onclick=()=>{ playSound('button'); currentQuestionIndex++; loadQuestion(); };
+
+function resetTimer(){
+  clearInterval(timer); timeLeft=30; timerEl.textContent="⏳ "+timeLeft+"s";
+  timer=setInterval(()=>{
+    timeLeft--; timerEl.textContent="⏳ "+timeLeft+"s";
+    if(timeLeft<=0){ clearInterval(timer); feedbackEl.textContent="⏰ Time's up!"; feedbackEl.className="feedback incorrect"; nextBtn.style.display="block"; document.querySelectorAll(".answer-btn").forEach(btn=>btn.disabled=true); }
+  },1000);
+}
+
+function showResult(){
+  quizEl.classList.remove("visible"); resultEl.classList.add("visible");
+  scoreEl.textContent="Your score: "+score+"/"+topics[currentTopic].length;
+  playSound('complete');
+  for(let i=0;i<30;i++){ const conf=document.createElement("div"); conf.className="confetti"; conf.textContent="🎉"; conf.style.left=Math.random()*100+"%"; conf.style.animationDuration=(1+Math.random()*2)+"s"; conf.style.fontSize=(16+Math.random()*16)+"px"; document.body.appendChild(conf); setTimeout(()=>conf.remove(),2000); }
+}
+
+document.getElementById("replayBtn").onclick=()=>{ playSound('button'); startQuiz(); };
+document.getElementById("nextTopicBtn").onclick=()=>{ playSound('button'); showTopics(); };
+document.getElementById("backBtn").onclick=()=>{ playSound('button'); showTopics(); };
+/* Dynamic colours for new topics */
+const gradients = [
+  "linear-gradient(135deg, #ff1744, #ff5252)", // red
+  "linear-gradient(135deg, #2979ff, #448aff)", // blue
+  "linear-gradient(135deg, #00c853, #69f0ae)", // green
+  "linear-gradient(135deg, #aa00ff, #e040fb)", // purple
+  "linear-gradient(135deg, #ff9100, #ffab40)", // orange
+  "linear-gradient(135deg, #00bfa5, #64ffda)", // teal
+  "linear-gradient(135deg, #d500f9, #ea80fc)", // pink
+  "linear-gradient(135deg, #ff6d00, #ffcc80)", // amber
+  "linear-gradient(135deg, #00acc1, #4dd0e1)", // cyan
+  "linear-gradient(135deg, #c51162, #f06292)"  // magenta
+];
+
+function applyDynamicColours() {
+  const topicButtons = document.querySelectorAll(".nav-btn");
+  topicButtons.forEach((btn, i) => {
+    if (!btn.style.background || btn.style.background === "") {
+      const gradient = gradients[i % gradients.length];
+      btn.style.background = gradient;
+      btn.style.color = "#fff";
+    }
+  });
+}
+
+/* Run once after topics are loaded */
+applyDynamicColours();
+
+</script>
+
+</body>
+</html>
